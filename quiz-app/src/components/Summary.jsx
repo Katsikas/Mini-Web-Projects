@@ -15,10 +15,25 @@ export default function Summary({ userAnswers }) {
 
   const wrongAnswersShare = 100 - skippedAnswersShare - correctAnswersShare;
 
+  let content = "";
+
+  if (correctAnswersShare > wrongAnswersShare) {
+    content = "Good Job!";
+  } else if (skippedAnswersShare > correctAnswersShare + wrongAnswersShare) {
+    content = "Redo the quiz!";
+  } else if (correctAnswersShare >= 80) {
+    content = "Excellent!";
+  } else if (wrongAnswersShare > correctAnswersShare) {
+    content = "You can do better!";
+  } else if (wrongAnswersShare >= 80) {
+    content = "Need Work!";
+  }
+
   return (
     <div id="summary">
       <img src={quizCompleteImg} alt="Trophy icon" />
       <h2>Quiz Completed</h2>
+      <h2>{content}</h2>
       <div id="summary-stats">
         <p>
           <span className="number">{skippedAnswersShare}%</span>
