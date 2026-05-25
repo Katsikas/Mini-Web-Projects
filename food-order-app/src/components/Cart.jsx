@@ -4,9 +4,10 @@ import CartContext from "../store/CartContext";
 import { currencyFormatter } from "../util/formatting";
 import Button from "./UI/Button";
 import UserProgressContext from "../store/UserProgressContext";
+import CartItem from "./CartItem";
 
 export default function Cart() {
-  const { items, addItem, removeItem } = useContext(CartContext);
+  const { items } = useContext(CartContext);
   const { progress, hideCart, showCheckout } = useContext(UserProgressContext);
 
   const cartTotal = items.reduce((totalPrice, item) => {
@@ -17,18 +18,16 @@ export default function Cart() {
     hideCart();
   }
 
-  function handleShowCheckout() {
+  function handleGoToCheckout() {
     showCheckout();
   }
 
   return (
-    <Modal className="cart" open={progress === "cart"}>
+    <Modal className="cart" open={progress === "cart"} onClose={handleHideCart}>
       <h2>Your Cart</h2>
       <ul>
         {items.map((item) => (
-          <li key={item.id}>
-            {item.name} - {item.quantity}
-          </li>
+          <CartItem key={item.id} item={item} />
         ))}
       </ul>
       <p className="cart-total">{currencyFormatter.format(cartTotal)}</p>
@@ -36,7 +35,9 @@ export default function Cart() {
         <Button textOnly onClick={handleHideCart}>
           Close
         </Button>
-        <Button onClick={handleShowCheckout}>Go to Checkout</Button>
+        {items.length > 0 && (
+          <Button onClick={handleGoToCheckout}>Go to Checkout</Button>
+        )}
       </p>
     </Modal>
   );
