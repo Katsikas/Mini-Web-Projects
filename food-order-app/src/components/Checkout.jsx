@@ -7,6 +7,7 @@ import Button from "./UI/Button.jsx";
 import Input from "./UI/Input.jsx";
 import useHttp from "../hooks/useHttp.js";
 import Error from "./Error.jsx";
+import { useActionState } from "react";
 
 const requestConfig = {
   method: "POST",
@@ -18,13 +19,10 @@ const requestConfig = {
 export default function Checkout() {
   const { progress, hideCheckout } = useContext(UserProgressContext);
   const { items, clearCart } = useContext(CartContext);
-  const {
-    data,
-    isLoading: isSending,
-    error,
-    sendRequest,
-    clearOrderData,
-  } = useHttp("http://localhost:3000/orders", requestConfig);
+  const { data, error, sendRequest, clearOrderData } = useHttp(
+    "http://localhost:3000/orders",
+    requestConfig,
+  );
 
   const cartTotal = items.reduce((totalPrice, item) => {
     return totalPrice + item.quantity * item.price;
@@ -40,13 +38,10 @@ export default function Checkout() {
     clearOrderData();
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-
-    const fd = new FormData(e.target);
+  async function checkoutAction(prevState, fd) {
     const customerData = Object.fromEntries(fd.entries());
 
-    sendRequest(
+    await sendRequest(
       JSON.stringify({
         order: {
           items: items,
@@ -55,6 +50,11 @@ export default function Checkout() {
       }),
     );
   }
+
+  const [formState, formAction, isSending] = useActionState(
+    checkoutAction,
+    null,
+  );
 
   let actions = (
     <>
@@ -91,9 +91,18 @@ export default function Checkout() {
       open={progress === "checkout"}
       onClose={handleClose}
     >
-      <form onSubmit={handleSubmit}>
+      <form action={formAction}>
         <h2>Checkout</h2>
-        <p>Total Amount: {currencyFormatter.format(cartTotal)}</p>
+        <ul className="checkout-items">
+          {items.map((item) => (
+            <li key={item.id}>
+              <span>{item.quantity}x</span> {item.name}
+            </li>
+          ))}
+        </ul>
+        <p className="checkout-total-amount">
+          Total Amount: <span>{currencyFormatter.format(cartTotal)}</span>
+        </p>
 
         <Input label="Full Name" id="name" type="text" />
         <Input label="E-mail Address" id="email" type="email" />
