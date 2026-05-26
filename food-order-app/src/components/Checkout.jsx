@@ -5,10 +5,25 @@ import CartContext from "../store/CartContext";
 import { currencyFormatter } from "../util/formatting.js";
 import Button from "./UI/Button.jsx";
 import Input from "./UI/Input.jsx";
+import useHttp from "../hooks/useHttp.js";
+import Error from "./Error.jsx";
+
+const requestConfig = {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+};
 
 export default function Checkout() {
   const { progress, hideCheckout } = useContext(UserProgressContext);
   const { items } = useContext(CartContext);
+  const {
+    data,
+    isLoading: isSending,
+    error,
+    sendRequest,
+  } = useHttp("http://localhost:3000/orders", requestConfig);
 
   const cartTotal = items.reduce((totalPrice, item) => {
     return totalPrice + item.quantity * item.price;
@@ -23,6 +38,28 @@ export default function Checkout() {
 
     const fd = new FormData(e.target);
     const customerData = Object.fromEntries(fd.entries());
+
+    sendRequest(
+      JSON.stringify({
+        order: {
+          items: items,
+          customer: customerData,
+        },
+      }),
+    );
+  }
+
+  let actions = (
+    <>
+      <Button type="button" textOnly onClick={handleClose}>
+        Close
+      </Button>
+      <Button>Submit Order</Button>
+    </>
+  );
+
+  if (isSending) {
+    actions = <span>Sending order data...</span>;
   }
 
   return (
@@ -35,20 +72,15 @@ export default function Checkout() {
         <h2>Checkout</h2>
         <p>Total Amount: {currencyFormatter.format(cartTotal)}</p>
 
-        <Input label="Full Name" id="full-name" type="text" />
+        <Input label="Full Name" id="name" type="text" />
         <Input label="E-mail Address" id="email" type="email" />
         <Input label="Street Address" id="street" type="text" />
         <div className="control-row">
           <Input label="Postal Code" id="postal-code" type="text" />
           <Input label="City" id="city" type="text" />
         </div>
-
-        <p className="modal-actions">
-          <Button type="button" textOnly onClick={handleClose}>
-            Close
-          </Button>
-          <Button>Submit Order</Button>
-        </p>
+        {error && <Error title="Failed to submit order." message={error} />}
+        <p className="modal-actions">{actions}</p>
       </form>
     </Modal>
   );
